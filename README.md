@@ -1,56 +1,105 @@
-# Welcome to your Expo app 👋
+# Actividad 2 · Navegación en React Native
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+App de práctica del curso UTN: un catálogo de módulos que combina **Stack Navigator**, **Tab Navigator**, **navegación anidada**, **paso de parámetros** y **Material Design 3** con React Native Paper.
 
-## Get started
-
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Cómo correrla
 
 ```bash
-npm run reset-project
+npm install
+npx expo start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Después se puede abrir en Expo Go, emulador Android/iOS o web.
 
-### Other setup steps
+## Qué se aplicó de la consigna
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+| Requisito                                      | Dónde quedó                                                     |
+| ---------------------------------------------- | --------------------------------------------------------------- |
+| Stack Navigator (`createNativeStackNavigator`) | `src/navigation/HomeStack.tsx`                                  |
+| Tab Navigator inferior                         | `src/navigation/TabNavigator.tsx`                               |
+| Navegación anidada (Stack dentro de un Tab)    | pestaña **Inicio** monta `HomeStack`                            |
+| `navigation` y `route` por props               | `HomeScreen`, `DetailsScreen`, `ExploreScreen`, `ProfileScreen` |
+| `route.params` (el "equipaje")                 | `DetailsScreen` lee `const { item } = route.params`             |
+| `navigation.navigate` / `push` / `goBack`      | listado, relacionados y botón atrás                             |
+| Hooks `useNavigation` / `useRoute`             | `AppHeader` y `BotonVolver` (no son pantallas)                  |
+| Tipado TypeScript de rutas                     | `src/types/navigation.ts`                                       |
+| React Native Paper + `PaperProvider`           | `src/app/_layout.tsx`                                           |
+| `SafeAreaProvider`                             | `src/app/_layout.tsx`                                           |
+| `ScreenWrapper` reutilizable                   | `src/components/ScreenWrapper.tsx`                              |
+| Estilos compartidos (grilla de 8 px)           | `src/theme/sharedStyles.ts`                                     |
+| Ripple / feedback táctil                       | `Card` y `Button` de Paper                                      |
 
-## Learn more
+## Estructura
 
-To learn more about developing your project with Expo, look at the following resources:
+Las pantallas y navegadores **no** viven dentro de `src/app/` (salvo el layout raíz) para que Expo Router no los tome como rutas. El resto sigue la organización pedida en la actividad:
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+```text
+src/
+  app/
+    _layout.tsx          PaperProvider + SafeAreaProvider + Stack raíz
+    index.tsx            monta el TabNavigator
+  navigation/
+    TabNavigator.tsx     menú inferior (Inicio / Explorar / Perfil)
+    HomeStack.tsx        Home → Details
+    reactNavigation.ts   imports compatibles con Expo SDK 57
+  screens/
+    HomeScreen.tsx
+    DetailsScreen.tsx
+    ExploreScreen.tsx
+    ProfileScreen.tsx
+  components/
+    ScreenWrapper.tsx
+    AppHeader.tsx
+    ModuloCard.tsx
+    BotonVolver.tsx
+  types/navigation.ts
+  data/modulos.ts
+  theme/
+    paperTheme.ts
+    sharedStyles.ts
+```
 
-## Join the community
+## Cómo se comunican las pantallas
 
-Join our community of developers creating universal apps.
+El navegador inyecta dos objetos en cada pantalla registrada:
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+1. **`navigation`** (control remoto)
+   - `navigate('Details', { item })` va al detalle. Si esa ruta ya está adelante, no apila de más.
+   - `push('Details', { item })` apila otra pantalla igual (módulos relacionados).
+   - `goBack()` vuelve a la anterior (header, `BotonVolver` y gesto nativo).
+   - `replace` queda explicado en Perfil: sirve para login, para que no se pueda volver al formulario.
+2. **`route.params`** (equipaje)
+   - Origen: `navigation.navigate('Details', { item })`
+   - Destino: `const { item } = route.params`
+
+Si el componente **no** es una pantalla (un botón o un header), no recibe esas props. Ahí se usan los hooks `useNavigation()` y `useRoute()`.
+
+## Navegación anidada
+
+```text
+Expo Router (shell, 1 sola ruta)
+  └── TabNavigator
+        ├── Inicio → HomeStack
+        │              ├── Home (lista)
+        │              └── Details (params)
+        ├── Explorar
+        └── Perfil
+```
+
+Hay como máximo **dos niveles** de navegación de producto (Tab + Stack), como pide la consigna. El Stack de Expo Router solo envuelve la app.
+
+Desde **Explorar** se entra al detalle del tab Inicio sin perder la barra inferior:
+
+```ts
+navigation.navigate("Inicio", {
+  screen: "Details",
+  params: { item },
+});
+```
+
+## Material Design
+
+- Márgenes y paddings en 8 / 16 / 24 / 32.
+- Cards con elevación y ripple al tocar.
+- Tema MD3 en `paperTheme.ts` (primario `#1565C0`).
+- Appbar, Chip, FAB, Avatar y Button de React Native Paper.
