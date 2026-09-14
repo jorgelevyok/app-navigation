@@ -1,5 +1,6 @@
 import { StyleSheet } from "react-native";
 
+/** Grilla de 8 px pedida por Material Design 3. */
 export const spacing = {
   xs: 8,
   sm: 16,
@@ -12,10 +13,11 @@ export const sharedStyles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: spacing.sm,
+    padding: spacing.md,
   },
   listContent: {
-    padding: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
     paddingBottom: spacing.lg,
     gap: spacing.sm,
   },
@@ -34,7 +36,7 @@ export const sharedStyles = StyleSheet.create({
   },
   fab: {
     position: "absolute",
-    right: spacing.sm,
-    bottom: spacing.sm,
+    right: spacing.md,
+    bottom: spacing.md,
   },
 });
